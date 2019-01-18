@@ -15,9 +15,9 @@
             }
 
             .carousel {
-                width: 500px;
+                width: 100%;
                 border: 5px solid pink;
-                overflow: hidden;
+                /* overflow: hidden; */
             }
 
             .carousel-inner {
@@ -26,9 +26,10 @@
             }
 
             .carousel-img {
+                border: 2px solid black;
                 display: flex;
                 justify-content: center;
-                flex: 0 0 100%;
+                flex: 0 0 50%;
                 transition: transform 0.3s ease-in-out;
             }
         </style>
@@ -37,9 +38,9 @@
         <p class="js-carousel-index">0</p>
         <div class="js-carousel carousel">
             <div class="js-carousel-inner carousel-inner">
-                <div class="js-carousel-img carousel-img"><img src="./1.jpg"></img></div>
-                <div class="js-carousel-img carousel-img"><img src="./2.jpg"></img></div>
-                <div class="js-carousel-img carousel-img"><img src="./3.jpg"></img></div>
+                <div class="js-carousel-img carousel-img"><h1>1</h1><img src="./1.jpg"></img></div>
+                <div class="js-carousel-img carousel-img"><h1>2</h1><img src="./1.jpg"></img></div>
+                <div class="js-carousel-img carousel-img"><h1>3</h1><img src="./1.jpg"></img></div>
             </div>
         </div>
         <button class="js-carousel-previous">Previous image</button>
