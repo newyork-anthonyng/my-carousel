@@ -1,20 +1,3 @@
-const previousButtonEle = document.querySelector(".js-carousel-previous");
-const nextButtonEle = document.querySelector(".js-carousel-next");
-const carouselInnerEle = document.querySelector(".js-carousel-inner");
-
-// duplicate all images
-const originalImages = document.querySelectorAll(".js-carousel-img");
-originalImages.forEach((image, index) => {
-    image.setAttribute("data-index", index);
-});
-const duplicatedImages = [...originalImages].map(image => {
-    return image.cloneNode(true);
-});
-duplicatedImages.forEach((image, index) => {
-    image.setAttribute("data-index", index + 3);
-    carouselInnerEle.appendChild(image);
-});
-
 const OFFSET = -50;
 const leftOfCarouselTranslates = [
     -100 + OFFSET,
@@ -80,13 +63,6 @@ function translateX(node, amount) {
     node.style.transform = `translateX(${amount}%)`;
 }
 
-let images = [
-    duplicatedImages[2],
-    ...originalImages,
-    duplicatedImages[0],
-    duplicatedImages[1]
-];
-
 function positionImages(images) {
     const [
         leftSideOfCarousel,
@@ -105,13 +81,7 @@ function positionImages(images) {
     moveToRightOfCarousel(anotherRightSideOfCarousel);
 }
 
-// initially position the images
-positionImages(images);
-
-nextButtonEle.addEventListener("click", moveCarouselForward);
-previousButtonEle.addEventListener("click", moveCarouselBack);
-
-function moveCarouselForward() {
+function moveCarouselForward(images) {
     /*
     3 [ 1 2 3 ] 1 2
     becomes
@@ -121,11 +91,10 @@ function moveCarouselForward() {
         ...images.slice(1),
         images[0]
     ];
-    images = newImages;
-    positionImages(newImages);
+    return newImages;
 }
 
-function moveCarouselBack() {
+function moveCarouselBack(images) {
     /*
     3 [ 1 2 3 ] 1 2
     becomes
@@ -136,9 +105,7 @@ function moveCarouselBack() {
         ...images.slice(0, images.length - 1),
         
     ];
-    images = newImages;
-    positionImages(newImages);
-
+    return newImages;
 }
 
 const TRANSLATE_X_REGEX = /.*\((-?\d*)%\)/;
@@ -156,3 +123,94 @@ function getTransform(node) {
     const parsedTransform = TRANSLATE_X_REGEX.exec(transform);
     return +parsedTransform[1];
 }
+
+class MyCarousel extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+
+        this.handleNextButtonClick = this.handleNextButtonClick.bind(this);
+        this.handlePreviousButtonClick = this.handlePreviousButtonClick.bind(this);
+
+        this.shadowRoot.innerHTML = `
+            <style>
+                * {
+                    box-sizing: border-box;
+                }
+
+                .carousel {
+                    width: 100%;
+                    border: 5px solid pink;
+                    overflow: hidden;
+                }
+
+                .carousel-inner {
+                    border: 5px solid black;
+                    display: flex;
+                }
+
+                .carousel-img {
+                    border: 2px solid black;
+                    display: flex;
+                    justify-content: center;
+                    flex: 0 0 50%;
+                    transition: transform 0.3s ease-in-out;
+                }
+            </style>
+            <div class="js-carousel carousel">
+                <div class="js-carousel-inner carousel-inner">
+                    <slot></slot>
+                </div>
+            </div>
+            <button class="js-carousel-previous">Previous image</button>
+            <button class="js-carousel-next">Next image</button>
+        `
+        this.previousButtonEle = this.shadowRoot.querySelector(".js-carousel-previous");
+        this.nextButtonEle = this.shadowRoot.querySelector(".js-carousel-next");
+        this.carouselInnerEle = this.shadowRoot.querySelector(".js-carousel-inner");
+
+        // duplicate all images
+        this.createDuplicateImages();
+
+        this.images = [
+            this.duplicatedImages[2],
+            ...this.originalImages,
+            this.duplicatedImages[0],
+            this.duplicatedImages[1]
+        ];
+
+        positionImages(this.images);
+        this.addEventListeners()
+    }
+
+    createDuplicateImages() {
+        this.originalImages = this.querySelectorAll(".js-carousel-img");
+        this.originalImages.forEach((image, index) => {
+            image.setAttribute("data-index", index);
+        });
+        this.duplicatedImages = [...this.originalImages].map(image => {
+            return image.cloneNode(true);
+        });
+        this.duplicatedImages.forEach((image, index) => {
+            image.setAttribute("data-index", index + 3);
+            this.carouselInnerEle.appendChild(image);
+        });
+    }
+
+    addEventListeners() {
+        this.nextButtonEle.addEventListener("click", this.handleNextButtonClick);
+        this.previousButtonEle.addEventListener("click", this.handlePreviousButtonClick);
+    }
+
+    handleNextButtonClick() {
+        this.images = moveCarouselForward(this.images);
+        positionImages(this.images);
+    }
+
+    handlePreviousButtonClick() {
+        this.images = moveCarouselBack(this.images);
+        positionImages(this.images);
+    }
+}
+
+window.customElements.define("my-carousel", MyCarousel);
