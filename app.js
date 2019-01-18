@@ -26,33 +26,33 @@ const leftOfCarouselTranslates = [
 ];
 
 function moveToLeftOfCarousel(node) {
-    const index = node.dataset.index;
-
-    const isOnRightOfCarousel = getTransform(node) === leftOfCarouselTranslates[index] + 400;
-    console.log("is on right of carousel", isOnRightOfCarousel);
-    if (isOnRightOfCarousel) {
+    // handle when image goes from left side of carousel to right side
+    // we don't want it to overlap the visible images
+    if (isOnRightOfCarousel(node)) {
         node.style.opacity = "0";
-    }
-    translateX(node, leftOfCarouselTranslates[index]);
-
-    if (isOnRightOfCarousel) {
         node.addEventListener("transitionend", handleTransitionEnd);
     }
+
+    moveToLeftOfCarouselWithOffset(node, 0);
 }
 
 function moveToRightOfCarousel(node) {
-    const index = node.dataset.index;
-
-    const isOnLeftOfCarousel = leftOfCarouselTranslates[index] === getTransform(node);
-    if (isOnLeftOfCarousel) {
+    // handle when image goes from right side of carousel to left side
+    // we don't want it to overlap the visible images
+    if (isOnLeftOfCarousel(node)) {
         node.style.opacity = "0";
-        
-    }
-    translateX(node, leftOfCarouselTranslates[index] + 400);
-
-    if (isOnLeftOfCarousel) {
         node.addEventListener("transitionend", handleTransitionEnd);
     }
+
+    moveToLeftOfCarouselWithOffset(node, 400);
+}
+
+function isOnRightOfCarousel(node) {
+    return getTransform(node) === leftOfCarouselTranslates[node.dataset.index] + 400;
+}
+
+function isOnLeftOfCarousel(node) {
+    return leftOfCarouselTranslates[node.dataset.index] === getTransform(node);
 }
 
 function handleTransitionEnd() {
@@ -60,31 +60,26 @@ function handleTransitionEnd() {
     this.style.opacity = "1";
 }
 
+function moveToLeftOfCarouselWithOffset(node, offset) {
+    translateX(node, leftOfCarouselTranslates[node.dataset.index] + offset);
+}
+
 function moveToLeftMost(node) {
-    const index = node.dataset.index;
-    translateX(node, leftOfCarouselTranslates[index] + 100);
+    moveToLeftOfCarouselWithOffset(node, 100);
 }
 
 function moveToCenter(node) {
-    const index = node.dataset.index;
-    translateX(node, leftOfCarouselTranslates[index] + 200);
+    moveToLeftOfCarouselWithOffset(node, 200);
 }
 
 function moveToRightMost(node) {
-    const index = node.dataset.index;
-    translateX(node, leftOfCarouselTranslates[index] + 300);
+    moveToLeftOfCarouselWithOffset(node, 300);
 }
 
 function translateX(node, amount) {
     node.style.transform = `translateX(${amount}%)`;
 }
 
-/*
- [ ] represents the visible part of the carousel
- 3 [ 1 2 3 ] 1 2
- go next
- 1 [ 2 3 1 ] 2 3
-*/
 let images = [
     duplicatedImages[2],
     ...originalImages,
@@ -110,18 +105,32 @@ function positionImages(images) {
     moveToRightOfCarousel(anotherRightSideOfCarousel);
 }
 
+// initially position the images
 positionImages(images);
 
-nextButtonEle.addEventListener("click", () => {
+nextButtonEle.addEventListener("click", moveCarouselForward);
+previousButtonEle.addEventListener("click", moveCarouselBack);
+
+function moveCarouselForward() {
+    /*
+    3 [ 1 2 3 ] 1 2
+    becomes
+    1 [ 2 3 1 ] 2 3
+    */
     const newImages = [
         ...images.slice(1),
         images[0]
     ];
     images = newImages;
     positionImages(newImages);
-});
+}
 
-previousButtonEle.addEventListener("click", () => {
+function moveCarouselBack() {
+    /*
+    3 [ 1 2 3 ] 1 2
+    becomes
+    2 [ 3 1 2 ] 3 1
+    */
     const newImages = [
         images[images.length - 1],
         ...images.slice(0, images.length - 1),
@@ -129,7 +138,8 @@ previousButtonEle.addEventListener("click", () => {
     ];
     images = newImages;
     positionImages(newImages);
-});
+
+}
 
 const TRANSLATE_X_REGEX = /.*\((-?\d*)%\)/;
 function getTransform(node) {
